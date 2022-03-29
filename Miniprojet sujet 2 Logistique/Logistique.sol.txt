@@ -1,0 +1,80 @@
+pragma solidity ^0.6.12;
+
+// SPDX-License-Identifier: GPL-3.0
+
+import "./Ownable.sol";
+import "./SafeMath.sol";
+import "./Whitelist.sol";
+
+contract Logistique is Ownable, Whitelist {
+
+using SafeMath for uint256;
+
+    // Model a Producteur et Lot
+    struct Producteur {
+
+        uint256 id;
+        string name;
+        address wallet;
+    }
+    struct Lot{
+
+        uint id;
+        uint productCountINLOT;
+    }
+    struct Product{
+        uint id;
+        string name;
+        uint lotid;        
+    }
+
+    
+    // Fetch Candidate and lot
+    mapping(uint => Producteur) public producteurs;
+    mapping(uint => Lot) public lots;
+    mapping(uint => Product) public products;
+    
+    // Store Producteur Count
+    uint public producteurCount;
+    uint public lotCount;
+    uint public productCount;
+
+    // voted event
+    event produitEvent ( uint indexed _producteurId);
+    
+    function addProducteur (string memory _name, address _wallet) public onlyOwner {
+        producteurCount ++;
+        producteurs[producteurCount] = Producteur(producteurCount, _name,_wallet);
+        //Ajout à la whitelist
+        addToWhitelist(_wallet);
+    }
+
+    function addLot (uint _nbrLot) public /*onlyWhitelisted*/ {
+
+        //L'ajouteur doit être dans la whitelist
+        require(_nbrLot > 0);
+        //Doit être dans la whitelist ou est le propriétaire
+        require(isWhitelisted(msg.sender) || msg.sender == owner);
+        for(uint i=0;i<_nbrLot;i++){
+            lotCount++;
+            lots[lotCount] = Lot(lotCount,0);
+        }
+
+
+    }
+        function addProduct (uint _lotId, uint _nbrProduct,string memory _productName) public /*onlyWhitelisted*/ {
+
+        // Lot Valide
+        require(_lotId > 0 && _lotId <= lotCount && _nbrProduct > 0);
+        //Doit être dans la whitelist ou est le propriétaire
+        require(isWhitelisted(msg.sender) || msg.sender == owner);
+        lots[_lotId].productCountINLOT += _nbrProduct;
+
+        for(uint i=0;i<_nbrProduct;i++){
+            productCount++;
+            products[productCount] = Product(productCount,_productName,_lotId);
+        }
+
+    }
+
+}
